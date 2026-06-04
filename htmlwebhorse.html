@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Downs - Betting Interface</title>
+    <style>
+        /* --- RESET & BASIC SETUP --- */
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+        }
+
+        /* --- REPLICA STYLES BASED ON INPUT --- */
+        .sDvHeaderTitleBetZone {
+            background-color: #333;
+            padding: 10px;
+            border-bottom: 2px solid #555;
+            margin-bottom: 10px;
+        }
+
+        .sLblTrackNameTitle {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .sDvHeaderMettings {
+            display: flex;
+            align-items: center;
+            background-color: #222;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+
+        .sDvMeetingSelected {
+            color: #ffcc00; /* Gold/Yellow accent from betting sites */
+            font-weight: bold;
+            padding: 5px 10px;
+        }
+
+        /* --- TABLE STYLES --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background-color: #444;
+            color: #ccc;
+            height: 30px;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: middle;
+        }
+
+        .sTdRaceProgramNumberInformation div {
+            width: 20px;
+            height: 20px;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+
+        /* Horse Colors */
+        .ProgramNumberT1 { background-color: #d32f2f; } /* Red */
+        .ProgramNumberT2 { background-color: #fff; color: #000 !important; } /* White */
+        .ProgramNumberT3 { background-color: #1976d2; } /* Blue */
+
+        .sLabelRunner {
+            font-weight: bold;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        .sTdRaceMorningLineInformation {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        /* --- PLAYER & BETTING CONTROLS (CUSTOM FOR GAME) --- */
+        .control-panel {
+            background-color: #1a1a1a;
+            padding: 15px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="number"], select {
+            background-color: #333;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        checkbox {
+            background: linear-gradient(to bottom, #444, #222);
+            border: 1px solid #555;
+            color: white;
+            padding: 6px 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        .sDvButtonAddBetSlip {
+            background-color: #ffcc00;
+            color: #000;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .sDvButtonAddBetSlip:hover {
+            background-color: #e6b800;
+        }
+
+        /* Checkbox styling replica */
+        .checkBoxUnChecked input {
+            transform: scale(1.5);
+        }
+
+        /* --- BET SLIP / LOG --- */
+        #bet-log {
+            margin-top: 20px;
+            background-color: #222;
+            padding: 10px;
+            border: 1px solid #444;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            border-bottom: 1px solid #333;
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Hide elements implies by class sHideElement */
+        .sHideElement { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sDvHeaderTitleBetZone">
+        <span class="sLblTrackNameTitle">Horse Derby</span>
+    </div>
+
+    <div class="sDvHeaderMettings">
+        <div class="sDvMeeting sDvMeetingSelected">Race 1</div>
+        <div style="flex-grow: 1; text-align: right; color: #aaa;">Post Time: <span id="post-time">NOW</span></div>
+    </div>
+
+    <div class="control-panel">
+        <div>
+            <label>New Player:</label>
+            <input type="text" id="newPlayerName" placeholder="Enter Name">
+            <button onclick="addPlayer()">Add Player</button>
+        </div>
+        <div style="border-left: 1px solid #444; padding-left: 10px; margin-left: 10px;">
+            <label>Current Bettor:</label>
+            <select id="activePlayerSelect">
+                </select>
+        </div>
+        <div style="margin-left: auto;">
+             <strong>Balance: $<span id="currentBalance">0</span></strong>
+        </div>
+        
+        <div>
+            <input type="number" id="wager-amount" placeholder="0.00" style="width: 80px;">
+        
+        </div>
+
+        
+    </div>
+
+    <table id="tlbRunners1">
+        <thead>
+            <tr>
+                <td width="30px">First</td>
+                <td width="30px">Second</td>
+                <td width="30px">Third</td>
+                <td width="50px">PN</td>
+                <td>Runner</td>
+                <td>Jockey</td>
+                <td>Odds</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tbody>
+            <tr>
+                <span></span>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="first-place" data-horse="1" checked /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="second-place" data-horse="1" /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="third-place" data-horse="1" /></td>
+                <td class="sTdRaceProgramNumberInformation"><div class="ProgramNumberT1">1</div></td>
+                <td class="sTdRaceRunnerJockeyInformation"><span class="sLabelRunner"></span></td>
+                <td></td>
+                <td class="sTdRaceMorningLineInformation"></td>
+            </tr>
+            <tr>
+                <span></span>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="first-place" data-horse="2" /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="second-place" data-horse="2" checked /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="third-place" data-horse="2" /></td>
+                <td class="sTdRaceProgramNumberInformation"><div class="ProgramNumberT2">2</div></td>
+                <td class="sTdRaceRunnerJockeyInformation"><span class="sLabelRunner"></span></td>
+                <td></td>
+                <td class="sTdRaceMorningLineInformation"></td>
+            </tr>
+            <tr>
+                <span></span>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="first-place" data-horse="3" /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="second-place" data-horse="3" /></td>
+                <td><input type="checkbox" style="transform: scale(1.5);" class="third-place" data-horse="3" checked /></td>
+                <td class="sTdRaceProgramNumberInformation"><div class="ProgramNumberT3">3</div></td>
+                <td class="sTdRaceRunnerJockeyInformation"><span class="sLabelRunner"></span></td>
+                <td></td>
+                <td class="sTdRaceMorningLineInformation"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="sDvButtonAddBetSlip" onclick="placeBet()">
+        Add to Bet Slip
+    </div>
+    
+    <div <button onclick="displayRandomName()"></button>
+        <p id="nameDisplay"></p>
+    </div>
+    
+
+    <div style="margin-top: 20px; text-align: center;">
+        <button onclick="triggerArduinoRace()" style="background: #d32f2f; font-size: 14px; padding: 10px 30px;">START RACE (ARDUINO)</button>
+    </div>
+
+    <div id="bet-log">
+        <div style="color: #888; text-align: center; padding: 10px;">No bets placed yet.</div>
+    </div>
+<script src="script.js"></script>
+
+
+</body>
+</html>=
